@@ -32,6 +32,8 @@
   let connected = false;
   let pending = false;
   let lastPayload = '';
+  let lastRequestId = '';
+  let responseTimer = null;
   let parentOrigin = '';
   function setNotice(id,text,kind){ const el=$(id); el.className='notice '+(kind||'info'); el.textContent=text; }
   function setServerResult(title,body,kind){ const el=$('server-result'); el.className='result '+(kind||''); el.replaceChildren(); const strong=document.createElement('strong'); strong.textContent=title; const span=document.createElement('span'); span.textContent=body; el.append(strong,span); }
@@ -59,21 +61,23 @@
   async function onDecoded(text){
     if(pending)return;
     const payload=String(text||'').trim(); if(!payload)return;
-    pending=true; lastPayload=payload; $('payload').textContent=payload; $('copy').disabled=false; $('send').disabled=!connected;
+    pending=true; lastPayload=payload; lastRequestId=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():('scan_'+Date.now()+'_'+Math.random().toString(36).slice(2,12)); $('payload').textContent=payload; $('copy').disabled=false; $('send').disabled=!connected;
     await stopScanner();
     setNotice('camera-msg','QR terbaca. Menunggu validasi server…','info');
-    if(connected){ const sent=postToParent({type:'WISUDA_QR_DECODED',payload:payload,version:1}); if(sent){setServerResult('Payload terkirim','Menunggu hasil validasi dari aplikasi Wisuda…','');} else {pending=false;setServerResult('Gagal mengirim','Tidak dapat mengirim hasil ke aplikasi induk. Salin payload dan gunakan input manual.','');setNotice('camera-msg','Koneksi ke aplikasi terputus.','error');} }
+    if(connected){ const sent=postToParent({type:'WISUDA_QR_DECODED',payload:payload,requestId:lastRequestId,version:1}); if(sent){setServerResult('Payload terkirim','Menunggu hasil validasi dari aplikasi Wisuda…','');$('send').disabled=true; if(responseTimer)clearTimeout(responseTimer); responseTimer=setTimeout(()=>{pending=false;$('send').disabled=!connected;setServerResult('Belum ada respons','Server belum mengirim balasan. Kamu bisa klik “Kirim Ulang ke Aplikasi”; ID permintaan tetap sama agar scan tidak dihitung dua kali.','warn');setNotice('camera-msg','Respons terlambat. Kirim ulang permintaan yang sama atau periksa log scan di aplikasi.','warn');},20000);} else {pending=false;$('send').disabled=false;setServerResult('Gagal mengirim','Tidak dapat mengirim hasil ke aplikasi induk. Salin payload dan gunakan input manual.','');setNotice('camera-msg','Koneksi ke aplikasi terputus.','error');} }
     else{ pending=false; setServerResult('Belum dikirim','Scanner tidak dibuka dari aplikasi Petugas. Salin payload dan buka scanner dari halaman Petugas.',''); }
   }
   $('start').addEventListener('click',startScanner);
   $('stop').addEventListener('click',async()=>{await stopScanner();setNotice('camera-msg','Kamera dihentikan.','info');});
   $('copy').addEventListener('click',async()=>{if(!lastPayload)return;try{await navigator.clipboard.writeText(lastPayload);setNotice('camera-msg','Payload QR berhasil disalin.','ok');}catch(e){setNotice('camera-msg','Clipboard tidak tersedia. Pilih dan salin payload secara manual dari kotak hasil.','warn');}});
-  $('send').addEventListener('click',()=>{if(!lastPayload||!connected||pending)return;pending=true;$('send').disabled=true;if(postToParent({type:'WISUDA_QR_DECODED',payload:lastPayload,version:1}))setServerResult('Payload terkirim ulang','Menunggu hasil validasi dari aplikasi Wisuda…','');else{pending=false;$('send').disabled=false;setServerResult('Gagal mengirim','Tidak dapat mengirim ke aplikasi induk.','');}});
+  $('send').addEventListener('click',()=>{if(!lastPayload||!connected||pending)return;if(!lastRequestId)lastRequestId=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():('scan_'+Date.now()+'_'+Math.random().toString(36).slice(2,12));pending=true;$('send').disabled=true;if(postToParent({type:'WISUDA_QR_DECODED',payload:lastPayload,requestId:lastRequestId,version:1})){setServerResult('Payload terkirim ulang','Menunggu hasil validasi dari aplikasi Wisuda…','');if(responseTimer)clearTimeout(responseTimer);responseTimer=setTimeout(()=>{pending=false;$('send').disabled=!connected;setServerResult('Belum ada respons','Server belum mengirim balasan. Kamu bisa mencoba kirim ulang dengan ID permintaan yang sama.','warn');},20000);}else{pending=false;$('send').disabled=false;setServerResult('Gagal mengirim','Tidak dapat mengirim ke aplikasi induk.','');}});
   window.addEventListener('message',event=>{
     if(!window.opener || event.source!==window.opener || !parentOrigin || event.origin!==parentOrigin)return;
     const msg=event.data; if(!msg || typeof msg!=='object')return;
     if(msg.type==='WISUDA_APP_READY'){connected=true;setNotice('connection','Scanner terhubung ke aplikasi Wisuda. QR yang dipindai dikirim untuk validasi server.','ok');return;}
     if(msg.type==='WISUDA_SCAN_RESULT'){
+      if(!msg.requestId || msg.requestId!==lastRequestId)return;
+      if(responseTimer){clearTimeout(responseTimer);responseTimer=null;}
       pending=false; const r=msg.result||{}; const ok=!!r.ok;
       setServerResult((r.status||'HASIL')+' · '+(r.nama||'Undangan'),String(r.message||''),ok?'ok':'warn');
       setNotice('camera-msg',ok?'Hasil server diterima: '+(r.status||'VALID')+'. Kamu dapat memindai tamu berikutnya.':'Hasil server: '+(r.status||'DITOLAK')+'. Periksa pesan validasi sebelum melanjutkan.',ok?'ok':'warn');
