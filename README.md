@@ -1,0 +1,1 @@
+# wisuda-qr-scanner
