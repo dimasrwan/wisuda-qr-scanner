@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="theme-color" content="#111827">
+  <title>Scanner QR Wisuda UIN Ar-Raniry</title>
+  <style>
+    :root{--navy:#111827;--ink:#172033;--muted:#64748b;--line:#e2e8f0;--orange:#f97316;--orange-dark:#ea580c;--green:#166534;--green-bg:#dcfce7;--red:#991b1b;--red-bg:#fee2e2;--amber:#92400e;--amber-bg:#fef3c7;--blue:#1d4ed8;--blue-bg:#dbeafe}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:#f3f5f9;color:var(--ink);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.top{background:var(--navy);border-bottom:4px solid var(--orange);color:white;padding:18px 22px}.top-inner{max-width:1000px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:16px}.brand{font-weight:850;letter-spacing:.03em}.brand small{display:block;margin-top:4px;color:#cbd5e1;font-weight:500;font-size:12px}.pill{font-size:11px;border:1px solid #475569;border-radius:999px;padding:7px 11px;color:#e2e8f0;white-space:nowrap}main{max-width:1000px;margin:26px auto;padding:0 18px 36px}.intro{display:flex;justify-content:space-between;align-items:start;gap:18px;margin-bottom:17px}.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:850;color:var(--orange)}h1{font-size:clamp(24px,3vw,34px);line-height:1.16;margin:7px 0}p{line-height:1.55}.muted{color:var(--muted);font-size:13px}.grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(280px,.9fr);gap:16px;align-items:start}.panel{border:1px solid var(--line);background:white;border-radius:17px;padding:19px;box-shadow:0 8px 28px rgba(15,23,42,.04);min-width:0}.panel h2{font-size:17px;margin:0 0 7px}.notice{padding:12px 13px;border-radius:10px;font-size:12px;line-height:1.5;margin:12px 0}.notice.info{background:var(--blue-bg);color:#1e40af}.notice.ok{background:var(--green-bg);color:var(--green)}.notice.warn{background:var(--amber-bg);color:var(--amber)}.notice.error{background:var(--red-bg);color:var(--red)}#reader{width:100%;min-height:220px;border:1px dashed #cbd5e1;border-radius:13px;overflow:hidden;background:#f8fafc}#reader video{object-fit:cover;border-radius:10px}.btn-row{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.btn{border:1px solid transparent;border-radius:10px;background:var(--orange);color:white;padding:10px 14px;font-size:13px;font-weight:750;cursor:pointer}.btn:hover{background:var(--orange-dark)}.btn.secondary{background:white;color:var(--ink);border-color:var(--line)}.btn:disabled{opacity:.45;cursor:not-allowed}.field{display:grid;gap:6px;margin-top:12px}.field label{font-size:12px;font-weight:750;color:#475569}.input{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:11px;font:inherit;font-size:12px}.payload{min-height:84px;overflow-wrap:anywhere;white-space:pre-wrap;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:11px;font:12px ui-monospace,SFMono-Regular,Consolas,monospace}.result{border:1px solid var(--line);border-radius:11px;padding:13px;margin-top:11px;font-size:13px;line-height:1.5}.result strong{display:block;margin-bottom:4px;font-size:13px}.statusdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#94a3b8;margin-right:6px}.statusdot.ok{background:#16a34a}.statusdot.warn{background:#d97706}.footer{max-width:1000px;margin:0 auto;padding:0 18px 24px;color:#94a3b8;font-size:11px;text-align:center}@media(max-width:760px){.grid{grid-template-columns:1fr}.top-inner{align-items:flex-start}.pill{display:none}main{margin-top:18px}.panel{padding:15px}}
+  </style>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+  <header class="top"><div class="top-inner"><div class="brand">WISUDA UIN AR-RANIRY<small>Scanner Kamera Tamu · Akses Petugas</small></div><span class="pill">KAMERA HTTPS</span></div></header>
+  <main>
+    <div class="intro"><div><div class="eyebrow">Pintu Masuk / Keluar</div><h1>Scanner QR Tamu</h1><p class="muted">Pindai QR undangan untuk mengirim hasilnya kembali ke aplikasi Wisuda. Validasi dan perubahan status tetap dilakukan oleh server Apps Script.</p></div></div>
+    <div id="connection" class="notice warn"><span class="statusdot warn"></span>Memeriksa koneksi ke aplikasi Wisuda…</div>
+    <div class="grid">
+      <section class="panel"><h2>1. Pindai dengan kamera</h2><p class="muted">Gunakan kamera belakang ponsel jika tersedia. Akses kamera hanya diminta setelah kamu menekan tombol Mulai Kamera.</p><div id="reader"></div><div class="btn-row"><button id="start" class="btn">Mulai Kamera</button><button id="stop" class="btn secondary" disabled>Hentikan</button></div><div id="camera-msg" class="notice info">Siap memulai pemindaian.</div></section>
+      <section class="panel"><h2>2. Hasil QR & validasi</h2><p class="muted">Payload dibaca di browser. Jika halaman ini dibuka dari aplikasi Wisuda, hasil dikirim lewat postMessage ke jendela aplikasi; halaman hosting tidak mengirim QR ke server scanner.</p><div class="field"><label for="payload">Payload QR terakhir</label><div id="payload" class="payload">Belum ada QR dipindai.</div></div><div class="btn-row"><button id="copy" class="btn secondary" disabled>Salin Payload</button><button id="send" class="btn" disabled>Kirim Ulang ke Aplikasi</button></div><div id="server-result" class="result" aria-live="polite"><strong>Menunggu hasil</strong>Hasil validasi dari server akan tampil di sini.</div><div class="notice warn">Undangan DRAFT atau token tidak valid tetap akan ditolak. Jangan memakai QR uji untuk akses resmi.</div></section>
+    </div>
+  </main>
+  <div class="footer">Sistem Pengelolaan Wisuda UIN Ar-Raniry · Scanner tidak menyimpan foto kamera atau riwayat scan pada hosting statis.</div>
+<script>
+(function(){
+  'use strict';
+  const $ = id => document.getElementById(id);
+  let scanner = null;
+  let scanning = false;
+  let connected = false;
+  let pending = false;
+  let lastPayload = '';
+  let parentOrigin = '';
+  function setNotice(id,text,kind){ const el=$(id); el.className='notice '+(kind||'info'); el.textContent=text; }
+  function setServerResult(title,body,kind){ const el=$('server-result'); el.className='result '+(kind||''); el.replaceChildren(); const strong=document.createElement('strong'); strong.textContent=title; const span=document.createElement('span'); span.textContent=body; el.append(strong,span); }
+  function safeParentOrigin(){ try { if(!document.referrer)return ''; const u=new URL(document.referrer); return /^https?:$/.test(u.protocol)?u.origin:''; } catch(e){ return ''; } }
+  function postToParent(message){
+    if(!window.opener || window.opener.closed || !parentOrigin) return false;
+    try { window.opener.postMessage(message,parentOrigin); return true; } catch(e){ return false; }
+  }
+  function renderConnection(){
+    connected=!!(window.opener && !window.opener.closed && parentOrigin);
+    if(connected){setNotice('connection','Scanner terhubung ke aplikasi Wisuda. QR yang dipindai dikirim ke aplikasi untuk divalidasi.','ok');postToParent({type:'WISUDA_SCANNER_READY',version:1});}
+    else setNotice('connection','Scanner dibuka mandiri: tidak ada koneksi ke aplikasi induk. QR bisa dibaca dan disalin, tetapi tidak akan tercatat sampai scanner dibuka dari halaman Petugas.','warn');
+  }
+  async function stopScanner(){ if(scanner && scanning){ try{await scanner.stop();}catch(e){} try{await scanner.clear();}catch(e){} } scanning=false; scanner=null; $('start').disabled=false; $('stop').disabled=true; }
+  async function startScanner(){
+    if(scanning)return;
+    if(!window.Html5Qrcode){setNotice('camera-msg','Library QR tidak berhasil dimuat. Periksa koneksi internet atau gunakan input kamera di browser yang didukung.','error');return;}
+    $('start').disabled=true; setNotice('camera-msg','Meminta izin kamera…','info');
+    try{
+      scanner=new Html5Qrcode('reader');
+      await scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:240,height:240},aspectRatio:1.0},onDecoded,()=>{});
+      scanning=true; $('stop').disabled=false; $('start').disabled=true; setNotice('camera-msg','Kamera aktif. Arahkan ke QR undangan.','ok');
+    }catch(err){scanner=null;scanning=false;$('start').disabled=false;$('stop').disabled=true;setNotice('camera-msg','Kamera tidak dapat dibuka: '+(err&&err.message?err.message:String(err)),'error');}
+  }
+  async function onDecoded(text){
+    if(pending)return;
+    const payload=String(text||'').trim(); if(!payload)return;
+    pending=true; lastPayload=payload; $('payload').textContent=payload; $('copy').disabled=false; $('send').disabled=!connected;
+    await stopScanner();
+    setNotice('camera-msg','QR terbaca. Menunggu validasi server…','info');
+    if(connected){ const sent=postToParent({type:'WISUDA_QR_DECODED',payload:payload,version:1}); if(sent){setServerResult('Payload terkirim','Menunggu hasil validasi dari aplikasi Wisuda…','');} else {pending=false;setServerResult('Gagal mengirim','Tidak dapat mengirim hasil ke aplikasi induk. Salin payload dan gunakan input manual.','');setNotice('camera-msg','Koneksi ke aplikasi terputus.','error');} }
+    else{ pending=false; setServerResult('Belum dikirim','Scanner tidak dibuka dari aplikasi Petugas. Salin payload dan buka scanner dari halaman Petugas.',''); }
+  }
+  $('start').addEventListener('click',startScanner);
+  $('stop').addEventListener('click',async()=>{await stopScanner();setNotice('camera-msg','Kamera dihentikan.','info');});
+  $('copy').addEventListener('click',async()=>{if(!lastPayload)return;try{await navigator.clipboard.writeText(lastPayload);setNotice('camera-msg','Payload QR berhasil disalin.','ok');}catch(e){setNotice('camera-msg','Clipboard tidak tersedia. Pilih dan salin payload secara manual dari kotak hasil.','warn');}});
+  $('send').addEventListener('click',()=>{if(!lastPayload||!connected||pending)return;pending=true;$('send').disabled=true;if(postToParent({type:'WISUDA_QR_DECODED',payload:lastPayload,version:1}))setServerResult('Payload terkirim ulang','Menunggu hasil validasi dari aplikasi Wisuda…','');else{pending=false;$('send').disabled=false;setServerResult('Gagal mengirim','Tidak dapat mengirim ke aplikasi induk.','');}});
+  window.addEventListener('message',event=>{
+    if(!window.opener || event.source!==window.opener || !parentOrigin || event.origin!==parentOrigin)return;
+    const msg=event.data; if(!msg || typeof msg!=='object')return;
+    if(msg.type==='WISUDA_APP_READY'){connected=true;setNotice('connection','Scanner terhubung ke aplikasi Wisuda. QR yang dipindai dikirim untuk validasi server.','ok');return;}
+    if(msg.type==='WISUDA_SCAN_RESULT'){
+      pending=false; const r=msg.result||{}; const ok=!!r.ok;
+      setServerResult((r.status||'HASIL')+' · '+(r.nama||'Undangan'),String(r.message||''),ok?'ok':'warn');
+      setNotice('camera-msg',ok?'Hasil server diterima: '+(r.status||'VALID')+'. Kamu dapat memindai tamu berikutnya.':'Hasil server: '+(r.status||'DITOLAK')+'. Periksa pesan validasi sebelum melanjutkan.',ok?'ok':'warn');
+      $('send').disabled=!connected;
+    }
+  });
+  parentOrigin=safeParentOrigin();
+  renderConnection();
+})();
+</script>
+</body>
+</html>
