@@ -59,7 +59,11 @@
           <div class="spinner-border spinner-border-sm me-2"></div>Memeriksa NIM: <b>${decodedText}</b>...
         </div>`;
 
-      fetch(`${APPS_SCRIPT_URL}?nim=${encodeURIComponent(decodedText)}&action=scan`)
+      fetch(`${APPS_SCRIPT_URL}?nim=${encodeURIComponent(decodedText)}&action=scan`, {
+        method: 'GET',
+        mode: 'cors',
+        headers: { 'Accept': 'application/json' }
+      })
         .then(response => response.json())
         .then(res => {
           renderResultBox(res);
@@ -111,7 +115,11 @@
           <div class="spinner-border spinner-border-sm me-2"></div>Mencatat KELUAR untuk NIM <b>${nim}</b>...
         </div>`;
 
-      fetch(`${APPS_SCRIPT_URL}?nim=${encodeURIComponent(nim)}&action=exit`)
+      fetch(`${APPS_SCRIPT_URL}?nim=${encodeURIComponent(nim)}&action=exit`, {
+        method: 'GET',
+        mode: 'cors',
+        headers: { 'Accept': 'application/json' }
+      })
         .then(res => res.json())
         .then(res => {
           renderResultBox(res);
