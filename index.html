@@ -22,10 +22,8 @@
     </div>
 
     <div class="card scan-card shadow-lg p-3 mb-3">
-      <!-- Kotak Kamera HP -->
       <div id="reader"></div>
       
-      <!-- Hasil Scan -->
       <div id="scanResult" class="mt-3 text-center">
         <div class="alert alert-dark border-secondary py-3 mb-0 text-white">
           <i class="fa-solid fa-camera fa-beat text-success me-2"></i> Arahkan kamera HP ke QR Code undangan tamu...
@@ -43,7 +41,6 @@
     let lastScanTime = 0;
     let isProcessing = false;
 
-    // URL Web App Google Apps Script Anda
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUvI4_am-sXkw_eG_f00JcLNGzkLYC1KOUdHpjVDt7xI7J_K4lbdcFUjsWjVf39Ll-fA/exec";
 
     function onScanSuccess(decodedText, decodedResult) {
@@ -59,29 +56,42 @@
 
       document.getElementById('scanResult').innerHTML = `
         <div class="alert alert-info py-3 mb-0">
-          <div class="spinner-border spinner-border-sm me-2"></div>Mencatat NIM: <b>${decodedText}</b>...
+          <div class="spinner-border spinner-border-sm me-2"></div>Memeriksa NIM: <b>${decodedText}</b>...
         </div>`;
 
-      // Mengirim data presensi ke Google Apps Script secara latar belakang (background)
       fetch(`${APPS_SCRIPT_URL}?nim=${encodeURIComponent(decodedText)}&action=scan`, {
         method: 'GET',
-        mode: 'no-cors'
+        mode: 'cors',
+        headers: { 'Accept': 'application/json' }
       })
-      .then(() => {
-        document.getElementById('scanResult').innerHTML = `
+        .then(response => response.json())
+        .then(res => {
+          renderResultBox(res);
+          setTimeout(() => { isProcessing = false; }, 2000);
+        })
+        .catch(err => {
+          document.getElementById('scanResult').innerHTML = `
+            <div class="alert alert-danger py-3 mb-0">
+              <i class="fa-solid fa-triangle-exclamation me-2"></i> Gagal terhubung: ${err.message}
+            </div>`;
+          isProcessing = false;
+        });
+    }
+
+    function renderResultBox(res) {
+      const box = document.getElementById('scanResult');
+      if (res.success) {
+        box.innerHTML = `
           <div class="alert alert-success py-3 shadow mb-0 fs-6">
-            <i class="fa-solid fa-circle-check me-2"></i> <b>SCAN BERHASIL DICATAT!</b><br>
-            NIM: <b>${decodedText}</b> (Silakan masuk)
+            <i class="fa-solid fa-circle-check me-2"></i> <b>${res.message}</b>
+            <div class="small mt-1 text-dark">Waktu: ${res.data.waktu}</div>
           </div>`;
-        setTimeout(() => { isProcessing = false; }, 2000);
-      })
-      .catch(err => {
-        document.getElementById('scanResult').innerHTML = `
-          <div class="alert alert-danger py-3 mb-0">
-            <i class="fa-solid fa-triangle-exclamation me-2"></i> Gagal: ${err.message}
+      } else {
+        box.innerHTML = `
+          <div class="alert alert-danger py-3 shadow mb-0 fs-6">
+            <i class="fa-solid fa-circle-xmark me-2"></i> <b>${res.message}</b>
           </div>`;
-        isProcessing = false;
-      });
+      }
     }
 
     function playBeep() {
@@ -99,7 +109,6 @@
       } catch(e) {}
     }
 
-    // Mengaktifkan kamera belakang HP secara otomatis
     const html5QrCode = new Html5Qrcode("reader");
     html5QrCode.start(
       { facingMode: "environment" },
